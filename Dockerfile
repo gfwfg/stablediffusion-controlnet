@@ -44,9 +44,10 @@ RUN git clone https://github.com/Mikubill/sd-webui-controlnet.git && \
     wget -O control_v11p_sd15_lineart.pth --no-verbose --show-progress --progress=bar:force:noscroll ${CONTROL_URL}
 
 WORKDIR /app/stable-diffusion-webui
-RUN pip install tqdm requests runpod
+RUN pip install tqdm requests runpod --no-cache-dir
 ADD prepare.py .
 RUN python prepare.py --skip-torch-cuda-test --xformers
 
-ADD src .
-CMD python -u /handler.py
+ADD . .
+#CMD python -u handler.py
+CMD ["python", "handler.py","--ckpt", "meinamix_meinaV10", "--xformers", "--disable-safe-unpickle", "--lowram", "--no-hashing"]
