@@ -4,7 +4,7 @@ FROM nvidia/cuda:11.7.1-runtime-ubuntu22.04
 # Use bash shell with pipefail option
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt update && apt-get -y install git wget \
+RUN apt update && apt install -y  git wget \
     python3.10 python3.10-venv python3-pip \
     build-essential libgl-dev libglib2.0-0 wget
 # Cleanup section (Worker Template)
