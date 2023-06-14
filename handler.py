@@ -5,16 +5,25 @@ import runpod
 from fastapi import FastAPI
 from modules.api.api import Api
 from modules.api.models import StableDiffusionImg2ImgProcessingAPI
-
+import modules
+from webui import initialize, setup_middleware
+from launch import *
 app = FastAPI()
+initialize()
+modules.script_callbacks.on_list_optimizers(modules.sd_hijack_optimizations.list_optimizers)
+modules.sd_hijack.list_optimizers()
+modules.script_callbacks.on_list_optimizers(modules.sd_hijack_optimizations.list_optimizers)
+modules.sd_hijack.list_optimizers()
 api = Api(app, queue_lock)
 
 
-def handler(event):
+def handler(request):
     '''
     This is the handler function that will be called by the serverless.
     '''
-    kwargs = event
+    kwargs = request['input']
+    if not kwargs:
+        return None
     img_req = StableDiffusionImg2ImgProcessingAPI(
        **kwargs
     )

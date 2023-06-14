@@ -4,13 +4,6 @@ FROM nvidia/cuda:11.7.1-runtime-ubuntu22.04
 # Use bash shell with pipefail option
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-ARG MODEL_URL="https://firebasestorage.googleapis.com/v0/b/new-test-project-b425d.appspot.com/o/asserts%2Fmeinamix_meinaV10.safetensors?alt=media"
-ARG CONTROL_URL="https://firebasestorage.googleapis.com/v0/b/new-test-project-b425d.appspot.com/o/asserts%2Fcontrol_v11p_sd15_lineart.pth?alt=media"
-
-ENV MODEL_URL=${MODEL_URL}
-ENV CONTROL_URL=${CONTROL_URL}
-ENV HF_TOKEN=${HF_TOKEN}
-
 RUN apt update && apt-get -y install git wget \
     python3.10 python3.10-venv python3-pip \
     build-essential libgl-dev libglib2.0-0 wget
@@ -31,17 +24,13 @@ WORKDIR /app
 # Stable Diffusioni Webui
 RUN git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git && \
     cd stable-diffusion-webui && \
-    git checkout baf6946e06249c5af9851c60171692c44ef633e0 &&\
-    cd models/Stable-diffusion/ && \
-    wget -O meinamix_meinaV10.safetensors --no-verbose --show-progress --progress=bar:force:noscroll ${MODEL_URL}
+    git checkout baf6946e06249c5af9851c60171692c44ef633e0
 
 # Controlnet
 WORKDIR /app/stable-diffusion-webui/extensions
 RUN git clone https://github.com/Mikubill/sd-webui-controlnet.git && \
     cd sd-webui-controlnet && \
-    git checkout 99408b9f4e514efdf33b19f3215ab661b989e209 &&\
-    cd models && \
-    wget -O control_v11p_sd15_lineart.pth --no-verbose --show-progress --progress=bar:force:noscroll ${CONTROL_URL}
+    git checkout 99408b9f4e514efdf33b19f3215ab661b989e209
 
 WORKDIR /app/stable-diffusion-webui
 RUN pip install tqdm requests runpod --no-cache-dir
