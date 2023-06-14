@@ -5,9 +5,9 @@ FROM nvidia/cuda:11.7.1-runtime-ubuntu22.04
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
 RUN apt update
-RUN apt install -y git wget \
-    python3.10 python3.10-venv python3-pip \
-    build-essential libgl-dev libglib2.0-0
+RUN apt install -y git wget build-essential libgl-dev libglib2.0-0
+RUN apt install -y python3.10 python3.10-venv python3-pip
+
 # Cleanup section (Worker Template)
 RUN apt-get autoremove -y && \
     apt-get clean -y && \
