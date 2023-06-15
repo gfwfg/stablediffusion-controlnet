@@ -1,6 +1,11 @@
 # Base image
 FROM nvidia/cuda:11.7.1-runtime-ubuntu22.04
+ARG MODEL_URL="https://firebasestorage.googleapis.com/v0/b/new-test-project-b425d.appspot.com/o/asserts%2Fmeinamix_meinaV10.safetensors?alt=media"
+ARG CONTROL_URL="https://firebasestorage.googleapis.com/v0/b/new-test-project-b425d.appspot.com/o/asserts%2Fcontrol_v11p_sd15_lineart.pth?alt=media"
 
+ENV MODEL_URL=${MODEL_URL}
+ENV CONTROL_URL=${CONTROL_URL}
+ENV HF_TOKEN=${HF_TOKEN}
 # Use bash shell with pipefail option
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 USER root
@@ -44,5 +49,5 @@ ADD prepare.py .
 RUN python prepare.py --skip-torch-cuda-test --xformers
 
 ADD . .
-#CMD python -u handler.py
-CMD ["python", "handler.py","--ckpt", "meinamix_meinaV10", "--xformers", "--disable-safe-unpickle", "--lowram", "--no-hashing"]
+RUN chmod +x /start.sh
+CMD /start.sh
