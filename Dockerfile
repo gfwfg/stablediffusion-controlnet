@@ -45,9 +45,7 @@ RUN git clone https://github.com/Mikubill/sd-webui-controlnet.git && \
 
 WORKDIR /app/stable-diffusion-webui
 RUN pip install tqdm requests runpod --no-cache-dir
-ADD prepare.py .
-RUN python prepare.py --skip-torch-cuda-test --xformers
-
 ADD . .
-RUN chmod +x /start.sh
-CMD /start.sh
+USER root
+RUN chmod +x start.sh
+CMD start.sh
