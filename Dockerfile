@@ -19,8 +19,7 @@ RUN apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
 RUN ln -s /usr/bin/python3.10 /usr/bin/python
-RUN useradd -ms /bin/bash banana
-USER banana
+
 ENV install_dir="$HOME"
 ENV python_cmd="python3.10"
 ENV K_DIFFUSION_REPO="https://github.com/brkirch/k-diffusion.git"
@@ -44,8 +43,12 @@ RUN git clone https://github.com/Mikubill/sd-webui-controlnet.git && \
     wget -O control_v11p_sd15_lineart.pth --no-verbose --show-progress --progress=bar:force:noscroll ${CONTROL_URL}
 
 WORKDIR /app/stable-diffusion-webui
-RUN pip install tqdm requests runpod --no-cache-dir
+RUN pip install requests runpod --no-cache-dir
+RUN pip install pytorch_lightning --no-cache-dir
+ENV TORCH_COMMAND="pip install torch==2.0.1 torchvision==0.15.2"
+ENV K_DIFFUSION_REPO="https://github.com/brkirch/k-diffusion.git"
+ENV K_DIFFUSION_COMMIT_HASH="51c9778f269cedb55a4d88c79c0246d35bdadb71"
 ADD . .
-USER root
-RUN chmod +x start.sh
-CMD start.sh
+
+RUN chmod +x /app/stable-diffusion-webui/start.sh
+ENTRYPOINT ["/app/stable-diffusion-webui/start.sh"]
