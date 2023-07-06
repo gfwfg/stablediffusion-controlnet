@@ -49,6 +49,7 @@ ENV TORCH_COMMAND="pip install torch==2.0.1 torchvision==0.15.2"
 ENV K_DIFFUSION_REPO="https://github.com/brkirch/k-diffusion.git"
 ENV K_DIFFUSION_COMMIT_HASH="51c9778f269cedb55a4d88c79c0246d35bdadb71"
 ADD . .
-
+RUN pip install -r requirements_versions.txt --prefer-binary --no-cache-dir
+RUN pip install -r requirements.txt --no-cache-dir
 RUN chmod +x /app/stable-diffusion-webui/start.sh
 ENTRYPOINT ["/app/stable-diffusion-webui/start.sh"]
