@@ -7,12 +7,16 @@ from requests.adapters import HTTPAdapter, Retry
 from r2_loader import R2Loader
 import os
 from uuid import uuid4
-# os.environ.get("AWS_ACCESS_KEY_ID")
-# os.environ.get("AWS_SECRET_ACCESS_KEY")
+from concurrent.futures import ThreadPoolExecutor as Pool
+from logging import getLogger
+from copy import deepcopy
 
+logger = getLogger("RPC_HANDLE")
 automatic_session = requests.Session()
 retries = Retry(total=10, backoff_factor=0.3, status_forcelist=[502, 503, 504, 500])
 automatic_session.mount('http://', HTTPAdapter(max_retries=retries))
+current_model = None
+pool = Pool(max_workers=5)
 
 r2 = R2Loader(
     aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
@@ -26,7 +30,7 @@ r2 = R2Loader(
 def process_parameters(prams: dict):
     init_images = prams.get("init_images")
     images = [
-        r2.download(image_url=img)
+        r2.download(img)
         for img in init_images
         if img.startswith("http")
     ]
@@ -44,7 +48,28 @@ def process_parameters(prams: dict):
 def process_response(resp_data: dict):
     return [
         r2.upload(img, f"{uuid4()}.jpg")
-        for img in resp_data['images']]
+        for img in resp_data['images']
+    ]
+
+
+def switch_base_model(prams: dict):
+    global current_model
+    base_model = None
+    if "base_model" in prams:
+        base_model = prams.pop("base_model")
+    if not base_model:
+        return
+    if base_model != current_model:
+        try:
+            option_payload = {
+                "sd_model_checkpoint": base_model,
+                "CLIP_stop_at_last_layers": 2
+            }
+            resp = automatic_session.post('http://127.0.0.1:3000/sdapi/v1/options', json=option_payload)
+            print(f"SWITCH MODEL: {resp.text}")
+            current_model = base_model
+        except:
+            return
 
 
 # ---------------------------------------------------------------------------- #
@@ -62,23 +87,28 @@ def wait_for_service(url):
             print("Service not ready yet. Retrying...")
         except Exception as err:
             print("Error: ", err)
-
         time.sleep(1)
 
 
-def run_inference(inference_request):
+def run_inference(inference_request, job_id):
     '''
     Run inference on a request.
     '''
     endpoint = inference_request.get("endpoint", "/sdapi/v1/img2img")
     params = inference_request.get("params")
+    web_hook_url = params.pop("webhook")
+    logger.info(f"[PARAMS]: {params}")
     params = process_parameters(params)
+    switch_base_model(params)
     response = automatic_session.post(
         url=urljoin('http://127.0.0.1:3000', endpoint),
         json=params,
         timeout=600)
     images = process_response(response.json())
-    return {"images": images}
+    output = {"images": images, "job_id": job_id}
+    if web_hook_url:
+        pool.submit(r2.send_post, web_hook_url, output)
+    return output
 
 
 # ---------------------------------------------------------------------------- #
@@ -89,7 +119,7 @@ def handler(event):
     This is the handler function that will be called by the serverless.
     '''
 
-    json = run_inference(event["input"])
+    json = run_inference(event["input"], job_id=event['id'])
 
     # return the output that you want to be returned like pre-signed URLs to output artifacts
     return json

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import base64
+import logging
+
 import requests
 import boto3
-from functools import wraps
+from functools import wraps, lru_cache
 from io import BytesIO
 
 
@@ -18,8 +20,7 @@ def retry(retry_times=3):
                     return func(*args, **kwargs)
                 except Exception as e:
                     exce = Exception(str(e))
-            if exce:
-                raise exce
+            return exce
 
         return inner
 
@@ -52,8 +53,10 @@ class R2Loader:
             aws_secret_access_key=self.aws_access_secret_key
         )
 
+    @staticmethod
+    @lru_cache(maxsize=10)
     @retry()
-    def _download(self, image_url):
+    def _download(image_url):
         r = requests.get(image_url, stream=True)
         io = BytesIO()
         for chunk in r.iter_content(chunk_size=1024):
@@ -72,3 +75,8 @@ class R2Loader:
         io = self._download(image_url)
         base64_string = base64.b64encode(io.getbuffer())
         return base64_string.decode()
+
+    @retry()
+    def send_post(self, url, json_data):
+        logging.info(f'[POST]:{url}, {json_data}')
+        return requests.post(url, json=json_data)
