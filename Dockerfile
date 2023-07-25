@@ -39,11 +39,15 @@ RUN pip install -r requirements_versions.txt --prefer-binary --no-cache-dir
 ADD ./requirements_costom.txt .
 RUN pip install -r requirements_costom.txt --no-cache-dir
 ADD ./start.sh .
-# ADD MODELS
+# =============  模型的导入 ===================
+# 模型的导入因为太大了，需要在本地自建目录来导入，可以修改为自己的模型路径
+# 添加基础模型
 ADD ./models/Stable-diffusion models/Stable-diffusion
+# 添加lora模型
 ADD ./models/Lora models/Lora
+# 添加controlnet的模型
 ADD ./extensions/sd-webui-controlnet/models extensions/sd-webui-controlnet/models
-
+# ===========================================
 ADD ./src/webui.py ./webui.py
 ADD ./src/rpc_handler.py ./rpc_handler.py
 ADD ./src/r2_loader.py ./r2_loader.py

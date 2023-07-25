@@ -9,7 +9,6 @@ import os
 from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor as Pool
 from logging import getLogger
-from copy import deepcopy
 
 logger = getLogger("RPC_HANDLE")
 automatic_session = requests.Session()
@@ -18,6 +17,7 @@ automatic_session.mount('http://', HTTPAdapter(max_retries=retries))
 current_model = None
 pool = Pool(max_workers=5)
 
+# r2的文件上传控制
 r2 = R2Loader(
     aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
     aws_access_secret_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
@@ -27,6 +27,7 @@ r2 = R2Loader(
 )
 
 
+# 参数的预处理，把图片转为base64字符串
 def process_parameters(prams: dict):
     init_images = prams.get("init_images")
     images = [
@@ -45,6 +46,7 @@ def process_parameters(prams: dict):
     return prams
 
 
+# 把base64输出转图片上传到r2中
 def process_response(resp_data: dict):
     return [
         r2.upload(img, f"{uuid4()}.jpg")
@@ -52,6 +54,7 @@ def process_response(resp_data: dict):
     ]
 
 
+# base model模型的跳转
 def switch_base_model(prams: dict):
     global current_model
     base_model = None
@@ -106,6 +109,7 @@ def run_inference(inference_request, job_id):
         timeout=600)
     images = process_response(response.json())
     output = {"images": images, "job_id": job_id}
+    # 发送webhook
     if web_hook_url:
         pool.submit(r2.send_post, web_hook_url, output)
     return output
